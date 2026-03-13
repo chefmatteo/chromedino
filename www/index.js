@@ -31,6 +31,7 @@ let COLUMNS = 1000;
 const FLOOR_VELOCITY = new Velocity(0, -8.4); // 1.2x faster than original -7
 // Global minimum gap between cactus obstacles (lower value = more obstacles)
 let CACTUS_MIN_GAP = 17; // ~33% smaller gap ≈ 50% more cacti
+const SAFE_LAND_GAP_COLUMNS = 90; // minimum safe horizontal gap after landing for cheat
 
 if (screen.width < COLUMNS) {
   COLUMNS = screen.width;
@@ -668,10 +669,7 @@ function runMatthewBot() {
     }
 
     // Pick the earliest valid collision time
-    if (
-      bestTimeToCollision === null ||
-      timeToCollision < bestTimeToCollision
-    ) {
+    if (bestTimeToCollision === null || timeToCollision < bestTimeToCollision) {
       bestTimeToCollision = timeToCollision;
     }
   }
@@ -745,13 +743,36 @@ function event_loop() {
   [
     [harmless_character_allocator, harmless_characters_pool],
     [harmfull_character_allocator, harmfull_characters_pool],
-  ].forEach((character_allocator_details) => {
+  ].forEach((character_allocator_details, allocatorIndex) => {
     for (let i = 0; i < character_allocator_details[0].length; i++) {
       const ALLOCATOR = character_allocator_details[0][i];
       ALLOCATOR.tick();
       const RANDOM_CHARACTER = ALLOCATOR.get_character();
       if (RANDOM_CHARACTER) {
         RANDOM_CHARACTER.get_velocity().add(cumulative_velocity);
+
+        // When Matthew cheat is active, avoid spawning harmful obstacles
+        // unrealistically close in front of the dino, which can create
+        // impossible sequences while the dino is still in the air.
+        if (
+          allocatorIndex === 1 &&
+          selectedCharacter === "matthew" &&
+          !matthewCheatManualOverride
+        ) {
+          const dino_character = harmfull_characters_pool[0];
+          if (dino_character) {
+            const dino_col = dino_character.get_position().get()[1];
+            const new_pos = RANDOM_CHARACTER.get_position().get();
+            const dx = new_pos[1] - dino_col;
+
+            // Skip spawning if the obstacle would appear too soon after the
+            // player, where a second reaction is impossible during a single jump.
+            if (dx > 0 && dx < SAFE_LAND_GAP_COLUMNS) {
+              continue;
+            }
+          }
+        }
+
         character_allocator_details[1].push(RANDOM_CHARACTER);
       }
     }
