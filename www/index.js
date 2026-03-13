@@ -29,12 +29,12 @@ const CELL_SIZE = 2;
 const ROWS = 300;
 let COLUMNS = 1000;
 const FLOOR_VELOCITY = new Velocity(0, -7);
-let CACTUS_MIN_GAP = 20;
+let CACTUS_MIN_GAP = 24;
 
 if (screen.width < COLUMNS) {
   COLUMNS = screen.width;
   FLOOR_VELOCITY.add(new Velocity(0, 2));
-  CACTUS_MIN_GAP = 50;
+  CACTUS_MIN_GAP = 60;
 }
 const DINO_INITIAL_TRUST = new Velocity(-10, 0);
 const ENVIRONMENT_GRAVITY = new Velocity(-0.8, 0);
@@ -50,7 +50,7 @@ let is_first_time = true;
 let game_score = null;
 let game_score_step = 0;
 let game_hi_score = null;
-let step_velocity = new Velocity(0, -1);
+let step_velocity = new Velocity(0, 0.05);
 let cumulative_velocity = null;
 let current_theme = null;
 
@@ -222,7 +222,7 @@ let harmless_character_allocator = [
         ),
         0.85,
       ),
-    100,
+    120,
     50,
   ),
 ];
@@ -286,7 +286,7 @@ let harmfull_character_allocator = [
       ),
 
     CACTUS_MIN_GAP,
-    100,
+    120,
   ),
   new CharacterAllocator(
     new AllocatorCharacterArray()
@@ -379,7 +379,10 @@ function initialize() {
       selectedCharacter = characterKey;
       Object.entries(characterButtons).forEach(([key, button]) => {
         if (!button) return;
-        button.classList.toggle("character-button--active", key === characterKey);
+        button.classList.toggle(
+          "character-button--active",
+          key === characterKey,
+        );
       });
       updateCharacterInfoImage();
     };
