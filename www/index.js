@@ -50,7 +50,7 @@ let is_first_time = true;
 let game_score = null;
 let game_score_step = 0;
 let game_hi_score = null;
-let step_velocity = new Velocity(0, 0.05);
+let step_velocity = new Velocity(0, 0.1);
 let cumulative_velocity = null;
 let current_theme = null;
 
@@ -589,11 +589,18 @@ function runMatthewBot() {
   const dino_pos = dino_character.get_position().get();
   const dino_col = dino_pos[1];
 
-  // Look for the closest harmful character in front of the dino
+  // Look for the closest harmful character (non-bird) in front of the dino
   let should_jump = false;
 
   for (let i = 1; i < harmfull_characters_pool.length; i++) {
     const obst = harmfull_characters_pool[i];
+    const obst_layout = obst.get_layout();
+
+    // Ignore birds completely; they never collide in our rules
+    if (bird_layout.fly.includes(obst_layout)) {
+      continue;
+    }
+
     const obst_pos = obst.get_position().get();
     const dx = obst_pos[1] - dino_col;
 
