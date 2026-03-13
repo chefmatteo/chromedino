@@ -32,9 +32,25 @@ const FLOOR_VELOCITY = new Velocity(0, -8.4); // 1.2x faster than original -7
 // Global minimum gap between cactus obstacles (higher value = fewer obstacles)
 let CACTUS_MIN_GAP = 40; // softened difficulty: more room to react
 const SAFE_LAND_GAP_COLUMNS = 140; // larger safe horizontal gap after landing for cheat
-// ~30% more obstacles while keeping gaps playable (minimum frames between spawns)
+// ~30% more obstacles for default hard mode; hard mode uses HARD_MODE_OBSTACLE_FACTOR for even more.
 const OBSTACLE_INCREASE_FACTOR = 1.3;
-const MIN_PLAYABLE_CACTUS_GAP = 60; // minimum ticks between cacti so player can react
+const HARD_MODE_OBSTACLE_FACTOR = 2.5; // crazily hard: way more obstacles for non-Matthew
+const MIN_PLAYABLE_CACTUS_GAP = 50; // minimum ticks between cacti so player can react
+
+// Returns gap params for obstacle spawn: matthew = easy (fewer obstacles), others = hard (more obstacles).
+function getObstacleGapsForCharacter(character) {
+  const isEasy = character === "matthew";
+  const factor = isEasy ? 1 : 1 / HARD_MODE_OBSTACLE_FACTOR;
+  return {
+    cactusMin: Math.max(
+      MIN_PLAYABLE_CACTUS_GAP,
+      Math.round((CACTUS_MIN_GAP + 40) * factor),
+    ),
+    cactusMax: Math.round(200 * factor),
+    birdMin: Math.round(650 * factor),
+    birdMax: Math.round(90 * factor),
+  };
+}
 
 if (screen.width < COLUMNS) {
   COLUMNS = screen.width;
@@ -268,94 +284,97 @@ let harmless_character_allocator = [
   ),
 ];
 
-let harmfull_character_allocator = [
-  new CharacterAllocator(
-    new AllocatorCharacterArray()
-      .add_character(
-        new CharacterMeta(
-          [cactus_layout.small_d1],
-          0,
-          new Position(201, COLUMNS),
-          FLOOR_VELOCITY,
+function buildHarmfullCharacterAllocator(character) {
+  const gaps = getObstacleGapsForCharacter(character);
+  return [
+    new CharacterAllocator(
+      new AllocatorCharacterArray()
+        .add_character(
+          new CharacterMeta(
+            [cactus_layout.small_d1],
+            0,
+            new Position(201, COLUMNS),
+            FLOOR_VELOCITY,
+          ),
+          0.72, // 10% fewer
+        )
+        .add_character(
+          new CharacterMeta(
+            [cactus_layout.small_s1],
+            0,
+            new Position(201, COLUMNS),
+            FLOOR_VELOCITY,
+          ),
+          0.63, // 10% fewer
+        )
+        .add_character(
+          new CharacterMeta(
+            [cactus_layout.small_s2],
+            0,
+            new Position(201, COLUMNS),
+            FLOOR_VELOCITY,
+          ),
+          0.54, // 10% fewer
+        )
+        .add_character(
+          new CharacterMeta(
+            [cactus_layout.medium_d1],
+            0,
+            new Position(193, COLUMNS),
+            FLOOR_VELOCITY,
+          ),
+          0.45, // 10% fewer
+        )
+        .add_character(
+          new CharacterMeta(
+            [cactus_layout.medium_s1],
+            0,
+            new Position(193, COLUMNS),
+            FLOOR_VELOCITY,
+          ),
+          0.36, // 10% fewer
+        )
+        .add_character(
+          new CharacterMeta(
+            [cactus_layout.medium_s2],
+            0,
+            new Position(193, COLUMNS),
+            FLOOR_VELOCITY,
+          ),
+          0.27, // 10% fewer
         ),
-        0.72, // 10% fewer
-      )
-      .add_character(
-        new CharacterMeta(
-          [cactus_layout.small_s1],
-          0,
-          new Position(201, COLUMNS),
-          FLOOR_VELOCITY,
-        ),
-        0.63, // 10% fewer
-      )
-      .add_character(
-        new CharacterMeta(
-          [cactus_layout.small_s2],
-          0,
-          new Position(201, COLUMNS),
-          FLOOR_VELOCITY,
-        ),
-        0.54, // 10% fewer
-      )
-      .add_character(
-        new CharacterMeta(
-          [cactus_layout.medium_d1],
-          0,
-          new Position(193, COLUMNS),
-          FLOOR_VELOCITY,
-        ),
-        0.45, // 10% fewer
-      )
-      .add_character(
-        new CharacterMeta(
-          [cactus_layout.medium_s1],
-          0,
-          new Position(193, COLUMNS),
-          FLOOR_VELOCITY,
-        ),
-        0.36, // 10% fewer
-      )
-      .add_character(
-        new CharacterMeta(
-          [cactus_layout.medium_s2],
-          0,
-          new Position(193, COLUMNS),
-          FLOOR_VELOCITY,
-        ),
-        0.27, // 10% fewer
-      ),
-
-    Math.max(
-      MIN_PLAYABLE_CACTUS_GAP,
-      Math.round((CACTUS_MIN_GAP + 40) / OBSTACLE_INCREASE_FACTOR),
+      gaps.cactusMin,
+      gaps.cactusMax,
     ),
-    Math.round(200 / OBSTACLE_INCREASE_FACTOR),
-  ),
-  new CharacterAllocator(
-    new AllocatorCharacterArray()
-      .add_character(
-        new CharacterMeta(
-          bird_layout.fly,
-          0,
-          new Position(170, COLUMNS),
-          FLOOR_VELOCITY.clone().add(new Velocity(0, -1)),
+    new CharacterAllocator(
+      new AllocatorCharacterArray()
+        .add_character(
+          new CharacterMeta(
+            bird_layout.fly,
+            0,
+            new Position(170, COLUMNS),
+            FLOOR_VELOCITY.clone().add(new Velocity(0, -1)),
+          ),
+          0.88, // 10% fewer bird waves
+        )
+        .add_character(
+          new CharacterMeta(
+            bird_layout.fly,
+            0,
+            new Position(190, COLUMNS),
+            FLOOR_VELOCITY.clone().add(new Velocity(0, -1)),
+          ),
+          0.81, // 10% fewer bird waves
         ),
-        0.88, // 10% fewer bird waves
-      )
-      .add_character(
-        new CharacterMeta(
-          bird_layout.fly,
-          0,
-          new Position(190, COLUMNS),
-          FLOOR_VELOCITY.clone().add(new Velocity(0, -1)),
-        ),
-        0.81, // 10% fewer bird waves
-      ),
-    Math.round(650 / OBSTACLE_INCREASE_FACTOR),
-    Math.round(90 / OBSTACLE_INCREASE_FACTOR),
-  ),
-];
+      gaps.birdMin,
+      gaps.birdMax,
+    ),
+  ];
+}
+
+let harmfull_character_allocator = buildHarmfullCharacterAllocator(
+  selectedCharacter,
+);
 
 function handleJumpDown() {
   if (game_over && Date.now() - game_over > 1000) {
@@ -386,6 +405,11 @@ function initialize() {
   canvas.width = COLUMNS;
   document.body.style.backgroundColor = current_theme.background;
   matthewCheatManualOverride = false;
+
+  // Matthew = easy (fewer obstacles), other characters = hard (more obstacles)
+  harmfull_character_allocator = buildHarmfullCharacterAllocator(
+    selectedCharacter,
+  );
 
   harmless_characters_pool = [];
   harmfull_characters_pool = [
