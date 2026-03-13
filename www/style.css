@@ -36,3 +36,28 @@
     background: #535353;
     color: #ffffff;
 }
+
+#character-info {
+    position: absolute;
+    bottom: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Arcade', monospace;
+    font-size: 14px;
+    color: #535353;
+}
+
+.character-info-label {
+    letter-spacing: 0.08em;
+}
+
+#character-current-image {
+    width: 200px;
+    height: 200px;
+    border: 1px solid #535353;
+    background: #ffffff;
+    image-rendering: pixelated;
+}
