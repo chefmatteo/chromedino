@@ -28,7 +28,7 @@ const canvas_ctx = canvas.getContext("2d");
 const CELL_SIZE = 2;
 const ROWS = 300;
 let COLUMNS = 1000;
-const FLOOR_VELOCITY = new Velocity(0, -5);
+const FLOOR_VELOCITY = new Velocity(0, -7);
 let CACTUS_MIN_GAP = 20;
 
 if (screen.width < COLUMNS) {
@@ -50,20 +50,26 @@ let is_first_time = true;
 let game_score = null;
 let game_score_step = 0;
 let game_hi_score = null;
-let step_velocity = new Velocity(0, -0.05);
+let step_velocity = new Velocity(0, -1);
 let cumulative_velocity = null;
 let current_theme = null;
 
-// Character image support (Andison / CK)
+// Character image support
 const CHARACTER_SOURCES = {
   andison: "../character/andison.png",
   ck: "../character/ck.png",
+  matthew: "../character/matthew.png",
+  tom: "../character/Tom.png",
 };
 
 const andisonImg = new Image();
 const ckImg = new Image();
+const matthewImg = new Image();
+const tomImg = new Image();
 let andisonReady = false;
 let ckReady = false;
+let matthewReady = false;
+let tomReady = false;
 
 andisonImg.src = CHARACTER_SOURCES.andison;
 andisonImg.onload = () => {
@@ -73,6 +79,16 @@ andisonImg.onload = () => {
 ckImg.src = CHARACTER_SOURCES.ck;
 ckImg.onload = () => {
   ckReady = true;
+};
+
+matthewImg.src = CHARACTER_SOURCES.matthew;
+matthewImg.onload = () => {
+  matthewReady = true;
+};
+
+tomImg.src = CHARACTER_SOURCES.tom;
+tomImg.onload = () => {
+  tomReady = true;
 };
 
 let selectedCharacter = "andison";
@@ -341,6 +357,8 @@ function initialize() {
   // Character selector buttons
   const andisonButton = document.getElementById("character-andison");
   const ckButton = document.getElementById("character-ck");
+  const matthewButton = document.getElementById("character-matthew");
+  const tomButton = document.getElementById("character-tom");
   const characterInfoImg = document.getElementById("character-current-image");
 
   const updateCharacterInfoImage = () => {
@@ -349,17 +367,20 @@ function initialize() {
     }
   };
 
-  if (andisonButton && ckButton) {
+  const characterButtons = {
+    andison: andisonButton,
+    ck: ckButton,
+    matthew: matthewButton,
+    tom: tomButton,
+  };
+
+  if (andisonButton && ckButton && matthewButton && tomButton) {
     const setActiveCharacter = (characterKey) => {
       selectedCharacter = characterKey;
-      andisonButton.classList.toggle(
-        "character-button--active",
-        characterKey === "andison",
-      );
-      ckButton.classList.toggle(
-        "character-button--active",
-        characterKey === "ck",
-      );
+      Object.entries(characterButtons).forEach(([key, button]) => {
+        if (!button) return;
+        button.classList.toggle("character-button--active", key === characterKey);
+      });
       updateCharacterInfoImage();
     };
 
@@ -371,6 +392,16 @@ function initialize() {
     ckButton.onclick = (event) => {
       event.stopPropagation();
       setActiveCharacter("ck");
+    };
+
+    matthewButton.onclick = (event) => {
+      event.stopPropagation();
+      setActiveCharacter("matthew");
+    };
+
+    tomButton.onclick = (event) => {
+      event.stopPropagation();
+      setActiveCharacter("tom");
     };
 
     setActiveCharacter(selectedCharacter);
@@ -433,6 +464,12 @@ function draw_dino(layout, position) {
   } else if (selectedCharacter === "ck") {
     img = ckImg;
     ready = ckReady;
+  } else if (selectedCharacter === "matthew") {
+    img = matthewImg;
+    ready = matthewReady;
+  } else if (selectedCharacter === "tom") {
+    img = tomImg;
+    ready = tomReady;
   }
 
   // Only draw the chosen character image; never fall back to the pixel dino.
