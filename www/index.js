@@ -31,6 +31,29 @@ let step_velocity = new Velocity(0, -0.1);
 let cumulative_velocity = null;
 let current_theme = null;
 
+// Character image support (Andison / CK)
+const CHARACTER_SOURCES = {
+    andison: "../character/andison.png",
+    ck: "../character/ck.png"
+};
+
+const andisonImg = new Image();
+const ckImg = new Image();
+let andisonReady = false;
+let ckReady = false;
+
+andisonImg.src = CHARACTER_SOURCES.andison;
+andisonImg.onload = () => {
+    andisonReady = true;
+};
+
+ckImg.src = CHARACTER_SOURCES.ck;
+ckImg.onload = () => {
+    ckReady = true;
+};
+
+let selectedCharacter = "andison";
+
 let harmless_characters_pool = null;
 let harmfull_characters_pool = null;
 
@@ -99,6 +122,30 @@ function initialize() {
         new Character(new CharacterMeta(dino_layout.run, 4, DINO_FLOOR_INITIAL_POSITION.clone(), new Velocity(0, 0)))
     ];
 
+    // Character selector buttons
+    const andisonButton = document.getElementById("character-andison");
+    const ckButton = document.getElementById("character-ck");
+
+    if (andisonButton && ckButton) {
+        const setActiveCharacter = (characterKey) => {
+            selectedCharacter = characterKey;
+            andisonButton.classList.toggle("character-button--active", characterKey === "andison");
+            ckButton.classList.toggle("character-button--active", characterKey === "ck");
+        };
+
+        andisonButton.onclick = (event) => {
+            event.stopPropagation();
+            setActiveCharacter("andison");
+        };
+
+        ckButton.onclick = (event) => {
+            event.stopPropagation();
+            setActiveCharacter("ck");
+        };
+
+        setActiveCharacter(selectedCharacter);
+    }
+
     document.ontouchstart = () => {
         if (game_over && (Date.now() - game_over) > 1000) {
             main();
@@ -139,6 +186,30 @@ function paint_layout(character_layout, character_position) {
     }
 }
 
+function draw_dino(layout, position) {
+    const row = position[0];
+    const col = position[1];
+
+    let img = null;
+    let ready = false;
+
+    if (selectedCharacter === "andison") {
+        img = andisonImg;
+        ready = andisonReady;
+    } else if (selectedCharacter === "ck") {
+        img = ckImg;
+        ready = ckReady;
+    }
+
+    if (img && ready) {
+        const layoutHeight = layout.length * CELL_SIZE;
+        const layoutWidth = layout[0].length * CELL_SIZE;
+        canvas_ctx.drawImage(img, col, row, layoutWidth, layoutHeight);
+    } else {
+        paint_layout(layout, position);
+    }
+}
+
 function event_loop() {
     game_score_step += 0.15;
 
@@ -175,7 +246,7 @@ function event_loop() {
     // first time
     if (is_first_time) {
         is_first_time = false;
-        paint_layout(dino_layout.stand, harmfull_characters_pool[0].get_position().get());
+        draw_dino(dino_layout.stand, harmfull_characters_pool[0].get_position().get());
         game_over = Date.now();
 
         canvas_ctx.textBaseline = 'middle';
@@ -232,7 +303,11 @@ function event_loop() {
                 continue;
             }
 
-            paint_layout(CHARACTER_LAYOUT, CHARACTER_POSITION);
+            if (index === 1 && i === 0) {
+                draw_dino(CHARACTER_LAYOUT, CHARACTER_POSITION);
+            } else {
+                paint_layout(CHARACTER_LAYOUT, CHARACTER_POSITION);
+            }
         }
     });
 
@@ -251,7 +326,7 @@ function event_loop() {
             canvas_ctx.fillStyle = current_theme.info_text;
             canvas_ctx.fillText("G     A     M     E             O     V     E     R", canvas.width / 2, (canvas.height / 2) - 50);
             paint_layout(retry_layout, new Position((canvas.height / 2) - retry_layout.length, (canvas.width / 2) - retry_layout[0].length).get());
-            paint_layout(dino_layout.dead, harmfull_characters_pool[0].get_position().get());
+            draw_dino(dino_layout.dead, harmfull_characters_pool[0].get_position().get());
             game_over = Date.now();
 
 

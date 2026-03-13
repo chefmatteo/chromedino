@@ -9,3 +9,30 @@
     left: 50%;
     transform: translate(-50%, -10%);
 }
+
+#character-selector {
+    position: absolute;
+    top: 2%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Arcade', monospace;
+    font-size: 14px;
+}
+
+.character-button {
+    border: 1px solid #535353;
+    background: #ffffff;
+    color: #535353;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-family: 'Arcade', monospace;
+    font-size: 12px;
+}
+
+.character-button--active {
+    background: #535353;
+    color: #ffffff;
+}
