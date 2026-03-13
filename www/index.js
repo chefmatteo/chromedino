@@ -912,9 +912,10 @@ function hideIntroAndStartGame() {
   }, 600);
 }
 
-document.fonts.load('1rem "Arcade"').then(() => {
+function setupIntroOrStartImmediately() {
   const intro = document.getElementById("intro-overlay");
 
+  // If there is no intro overlay, just start the game as before
   if (!intro) {
     main();
     return;
@@ -928,4 +929,19 @@ document.fonts.load('1rem "Arcade"').then(() => {
 
   document.addEventListener("keydown", handleStart);
   document.addEventListener("click", handleStart);
-});
+}
+
+if (document.fonts && document.fonts.load) {
+  document.fonts
+    .load('1rem "Arcade"')
+    .then(() => {
+      setupIntroOrStartImmediately();
+    })
+    .catch(() => {
+      // If font loading fails, still set up intro / game
+      setupIntroOrStartImmediately();
+    });
+} else {
+  // Fallback for environments without Font Loading API
+  setupIntroOrStartImmediately();
+}
