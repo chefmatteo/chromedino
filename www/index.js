@@ -28,13 +28,14 @@ const canvas_ctx = canvas.getContext("2d");
 const CELL_SIZE = 2;
 const ROWS = 300;
 let COLUMNS = 1000;
-const FLOOR_VELOCITY = new Velocity(0, -8.4); // 1.2x faster than -7
-let CACTUS_MIN_GAP = 29;
+const FLOOR_VELOCITY = new Velocity(0, -8.4); // 1.2x faster than original -7
+// Global minimum gap between cactus obstacles (lower value = more obstacles)
+let CACTUS_MIN_GAP = 17; // ~33% smaller gap ≈ 50% more cacti
 
 if (screen.width < COLUMNS) {
   COLUMNS = screen.width;
   FLOOR_VELOCITY.add(new Velocity(0, 2));
-  CACTUS_MIN_GAP = 72;
+  CACTUS_MIN_GAP = 40; // smaller gap on small screens as well
 }
 const DINO_INITIAL_TRUST = new Velocity(-10, 0);
 const ENVIRONMENT_GRAVITY = new Velocity(-0.8, 0);
@@ -50,21 +51,22 @@ let is_first_time = true;
 let game_score = null;
 let game_score_step = 0;
 let game_hi_score = null;
-let step_velocity = new Velocity(0, 0.1);
+// Horizontal speed-up step applied after score passes 1000.
+let step_velocity = new Velocity(0, -0.1);
 let cumulative_velocity = null;
 let current_theme = null;
 let matthewCheatManualOverride = false;
 
-// Character image support
+// Character image support (served from Netlify's publish directory: www/character/)
 const CHARACTER_SOURCES = {
-  andison: "../character/andison.png",
-  ck: "../character/ck.png",
-  matthew: "../character/matthew.png",
-  tom: "../character/Tom.png",
-  eden: "../character/eden.png",
-  justin: "../character/justin.png",
-  junia: "../character/junia.png",
-  aien: "../character/aien.png",
+  andison: "character/andison.png",
+  ck: "character/ck.png",
+  matthew: "character/matthew.png",
+  tom: "character/Tom.png",
+  eden: "character/eden.png",
+  justin: "character/justin.png",
+  junia: "character/junia.png",
+  aien: "character/aien.png",
 };
 
 const andisonImg = new Image();
@@ -255,7 +257,7 @@ let harmless_character_allocator = [
         ),
         0.85,
       ),
-    144,
+    80, // smaller gap so pits appear more often
     50,
   ),
 ];
@@ -319,7 +321,7 @@ let harmfull_character_allocator = [
       ),
 
     CACTUS_MIN_GAP,
-    180,
+    100, // reduce gap between harmful obstacles (~50% more overall)
   ),
   new CharacterAllocator(
     new AllocatorCharacterArray()
@@ -624,8 +626,12 @@ function runMatthewBot() {
   const dino_pos = dino_character.get_position().get();
   const dino_col = dino_pos[1];
 
-  // Look for the closest harmful character (non-bird) in front of the dino
-  let should_jump = false;
+  // Look for the closest harmful character (non-bird) in front of the dino,
+  // using time-to-collision instead of a fixed distance.
+  const MIN_JUMP_TIME_FRAMES = 10; // too early before this
+  const MAX_JUMP_TIME_FRAMES = 24; // too late after this
+
+  let bestTimeToCollision = null;
 
   for (let i = 1; i < harmfull_characters_pool.length; i++) {
     const obst = harmfull_characters_pool[i];
@@ -639,18 +645,38 @@ function runMatthewBot() {
     const obst_pos = obst.get_position().get();
     const dx = obst_pos[1] - dino_col;
 
-    // Ignore obstacles that are behind or too far away
-    if (dx <= 0 || dx > 140) {
+    // Ignore obstacles that are behind
+    if (dx <= 0) {
       continue;
     }
 
-    // Basic heuristic: any harmful character within this horizontal
-    // range is treated as an upcoming obstacle worth jumping over.
-    should_jump = true;
-    break;
+    // Use current obstacle horizontal speed to estimate time-to-collision
+    const obst_vel = obst.get_velocity().get();
+    const speedX = Math.abs(obst_vel[1]);
+    if (speedX <= 0.01) {
+      continue;
+    }
+
+    const timeToCollision = dx / speedX;
+
+    // Skip if the obstacle is either too far in the future or already too close
+    if (
+      timeToCollision < MIN_JUMP_TIME_FRAMES ||
+      timeToCollision > MAX_JUMP_TIME_FRAMES
+    ) {
+      continue;
+    }
+
+    // Pick the earliest valid collision time
+    if (
+      bestTimeToCollision === null ||
+      timeToCollision < bestTimeToCollision
+    ) {
+      bestTimeToCollision = timeToCollision;
+    }
   }
 
-  if (should_jump && dino_ready_to_jump) {
+  if (bestTimeToCollision !== null && dino_ready_to_jump) {
     handleJumpDown();
   }
 }
@@ -731,8 +757,8 @@ function event_loop() {
     }
   });
 
-  // increase velocity
-  if (game_score % 100 == 0) {
+  // increase velocity only after the player has scored at least 1000 points.
+  if (game_score >= 200 && game_score % 100 === 0) {
     cumulative_velocity.add(step_velocity);
   }
 
@@ -740,9 +766,11 @@ function event_loop() {
   [harmless_characters_pool, harmfull_characters_pool].forEach(
     (characters_pool, index) => {
       for (let i = characters_pool.length - 1; i >= 0; i--) {
-        // Increase velocity on each cycle
-        if (!(index == 1 && i == 0) && game_score % 100 == 0) {
-          characters_pool[i].get_velocity().add(step_velocity);
+        // Increase velocity on each cycle once speed-up has started
+        if (game_score >= 1000 && game_score % 100 === 0) {
+          if (!(index == 1 && i == 0)) {
+            characters_pool[i].get_velocity().add(step_velocity);
+          }
         }
 
         characters_pool[i].tick();
@@ -870,6 +898,34 @@ function main() {
   event_loop();
 }
 
+function hideIntroAndStartGame() {
+  const intro = document.getElementById("intro-overlay");
+  if (!intro || intro.classList.contains("intro-overlay--hidden")) {
+    return;
+  }
+
+  intro.classList.add("intro-overlay--hidden");
+
+  // Wait for fade-out transition to finish before starting the game
+  setTimeout(() => {
+    main();
+  }, 600);
+}
+
 document.fonts.load('1rem "Arcade"').then(() => {
-  main();
+  const intro = document.getElementById("intro-overlay");
+
+  if (!intro) {
+    main();
+    return;
+  }
+
+  const handleStart = () => {
+    document.removeEventListener("keydown", handleStart);
+    document.removeEventListener("click", handleStart);
+    hideIntroAndStartGame();
+  };
+
+  document.addEventListener("keydown", handleStart);
+  document.addEventListener("click", handleStart);
 });
