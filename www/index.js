@@ -28,7 +28,7 @@ const canvas_ctx = canvas.getContext("2d");
 const CELL_SIZE = 2;
 const ROWS = 300;
 let COLUMNS = 1000;
-const FLOOR_VELOCITY = new Velocity(0, -7);
+const FLOOR_VELOCITY = new Velocity(0, -5);
 let CACTUS_MIN_GAP = 20;
 
 if (screen.width < COLUMNS) {
@@ -50,7 +50,7 @@ let is_first_time = true;
 let game_score = null;
 let game_score_step = 0;
 let game_hi_score = null;
-let step_velocity = new Velocity(0, -0.1);
+let step_velocity = new Velocity(0, -0.05);
 let cumulative_velocity = null;
 let current_theme = null;
 
@@ -324,6 +324,7 @@ function initialize() {
     localStorage.getItem("project.github.chrome_dino.high_score") || 0;
   canvas.height = ROWS;
   canvas.width = COLUMNS;
+  document.body.style.backgroundColor = current_theme.background;
 
   harmless_characters_pool = [];
   harmfull_characters_pool = [
@@ -459,6 +460,7 @@ function event_loop() {
     } else {
       current_theme = themes.classic;
     }
+    document.body.style.backgroundColor = current_theme.background;
   }
 
   canvas_ctx.clearRect(0, 0, canvas.width, canvas.height);
