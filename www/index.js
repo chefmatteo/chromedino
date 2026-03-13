@@ -60,16 +60,28 @@ const CHARACTER_SOURCES = {
   ck: "../character/ck.png",
   matthew: "../character/matthew.png",
   tom: "../character/Tom.png",
+  eden: "../character/eden.png",
+  justin: "../character/justin.png",
+  junia: "../character/junia.png",
+  aien: "../character/aien.png",
 };
 
 const andisonImg = new Image();
 const ckImg = new Image();
 const matthewImg = new Image();
 const tomImg = new Image();
+const edenImg = new Image();
+const justinImg = new Image();
+const juniaImg = new Image();
+const aienImg = new Image();
 let andisonReady = false;
 let ckReady = false;
 let matthewReady = false;
 let tomReady = false;
+let edenReady = false;
+let justinReady = false;
+let juniaReady = false;
+let aienReady = false;
 
 andisonImg.src = CHARACTER_SOURCES.andison;
 andisonImg.onload = () => {
@@ -89,6 +101,26 @@ matthewImg.onload = () => {
 tomImg.src = CHARACTER_SOURCES.tom;
 tomImg.onload = () => {
   tomReady = true;
+};
+
+edenImg.src = CHARACTER_SOURCES.eden;
+edenImg.onload = () => {
+  edenReady = true;
+};
+
+justinImg.src = CHARACTER_SOURCES.justin;
+justinImg.onload = () => {
+  justinReady = true;
+};
+
+juniaImg.src = CHARACTER_SOURCES.junia;
+juniaImg.onload = () => {
+  juniaReady = true;
+};
+
+aienImg.src = CHARACTER_SOURCES.aien;
+aienImg.onload = () => {
+  aienReady = true;
 };
 
 let selectedCharacter = "andison";
@@ -359,6 +391,10 @@ function initialize() {
   const ckButton = document.getElementById("character-ck");
   const matthewButton = document.getElementById("character-matthew");
   const tomButton = document.getElementById("character-tom");
+  const edenButton = document.getElementById("character-eden");
+  const justinButton = document.getElementById("character-justin");
+  const juniaButton = document.getElementById("character-junia");
+  const aienButton = document.getElementById("character-aien");
   const characterInfoImg = document.getElementById("character-current-image");
 
   const updateCharacterInfoImage = () => {
@@ -372,9 +408,22 @@ function initialize() {
     ck: ckButton,
     matthew: matthewButton,
     tom: tomButton,
+    eden: edenButton,
+    justin: justinButton,
+    junia: juniaButton,
+    aien: aienButton,
   };
 
-  if (andisonButton && ckButton && matthewButton && tomButton) {
+  if (
+    andisonButton &&
+    ckButton &&
+    matthewButton &&
+    tomButton &&
+    edenButton &&
+    justinButton &&
+    juniaButton &&
+    aienButton
+  ) {
     const setActiveCharacter = (characterKey) => {
       selectedCharacter = characterKey;
       Object.entries(characterButtons).forEach(([key, button]) => {
@@ -389,22 +438,51 @@ function initialize() {
 
     andisonButton.onclick = (event) => {
       event.stopPropagation();
+      // Do not allow changing character while a run is in progress
+      if (!game_over && !is_first_time) return;
       setActiveCharacter("andison");
     };
 
     ckButton.onclick = (event) => {
       event.stopPropagation();
+      if (!game_over && !is_first_time) return;
       setActiveCharacter("ck");
     };
 
     matthewButton.onclick = (event) => {
       event.stopPropagation();
+      if (!game_over && !is_first_time) return;
       setActiveCharacter("matthew");
     };
 
     tomButton.onclick = (event) => {
       event.stopPropagation();
+      if (!game_over && !is_first_time) return;
       setActiveCharacter("tom");
+    };
+
+    edenButton.onclick = (event) => {
+      event.stopPropagation();
+      if (!game_over && !is_first_time) return;
+      setActiveCharacter("eden");
+    };
+
+    justinButton.onclick = (event) => {
+      event.stopPropagation();
+      if (!game_over && !is_first_time) return;
+      setActiveCharacter("justin");
+    };
+
+    juniaButton.onclick = (event) => {
+      event.stopPropagation();
+      if (!game_over && !is_first_time) return;
+      setActiveCharacter("junia");
+    };
+
+    aienButton.onclick = (event) => {
+      event.stopPropagation();
+      if (!game_over && !is_first_time) return;
+      setActiveCharacter("aien");
     };
 
     setActiveCharacter(selectedCharacter);
@@ -473,6 +551,18 @@ function draw_dino(layout, position) {
   } else if (selectedCharacter === "tom") {
     img = tomImg;
     ready = tomReady;
+  } else if (selectedCharacter === "eden") {
+    img = edenImg;
+    ready = edenReady;
+  } else if (selectedCharacter === "justin") {
+    img = justinImg;
+    ready = justinReady;
+  } else if (selectedCharacter === "junia") {
+    img = juniaImg;
+    ready = juniaReady;
+  } else if (selectedCharacter === "aien") {
+    img = aienImg;
+    ready = aienReady;
   }
 
   // Only draw the chosen character image; never fall back to the pixel dino.
