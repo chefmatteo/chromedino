@@ -485,6 +485,44 @@ function draw_dino(layout, position) {
   canvas_ctx.drawImage(img, col, row, layoutWidth, layoutHeight);
 }
 
+function runMatthewBot() {
+  // Enable auto-play only when Matthew is selected
+  if (selectedCharacter !== "matthew") {
+    return;
+  }
+
+  if (!harmfull_characters_pool || harmfull_characters_pool.length === 0) {
+    return;
+  }
+
+  const dino_character = harmfull_characters_pool[0];
+  const dino_pos = dino_character.get_position().get();
+  const dino_col = dino_pos[1];
+
+  // Look for the closest harmful character in front of the dino
+  let should_jump = false;
+
+  for (let i = 1; i < harmfull_characters_pool.length; i++) {
+    const obst = harmfull_characters_pool[i];
+    const obst_pos = obst.get_position().get();
+    const dx = obst_pos[1] - dino_col;
+
+    // Ignore obstacles that are behind or too far away
+    if (dx <= 0 || dx > 140) {
+      continue;
+    }
+
+    // Basic heuristic: any harmful character within this horizontal
+    // range is treated as an upcoming obstacle worth jumping over.
+    should_jump = true;
+    break;
+  }
+
+  if (should_jump && dino_ready_to_jump) {
+    handleJumpDown();
+  }
+}
+
 function event_loop() {
   game_score_step += 0.15;
 
@@ -601,6 +639,9 @@ function event_loop() {
     },
   );
 
+  // Matthew cheat: auto-play by triggering jumps before collisions
+  runMatthewBot();
+
   // harmfull characters collision detection
   let dino_character = harmfull_characters_pool[0];
   let dino_current_position = dino_character.get_position();
@@ -609,6 +650,12 @@ function event_loop() {
     const HARMFULL_CHARACTER_POSITION =
       harmfull_characters_pool[i].get_position();
     const HARMFULL_CHARACTER_LAYOUT = harmfull_characters_pool[i].get_layout();
+
+    // Ignore birds completely for collision so they never cause game over
+    if (bird_layout.fly.includes(HARMFULL_CHARACTER_LAYOUT)) {
+      continue;
+    }
+
     if (
       isCollided(
         dino_current_position.get()[0],
