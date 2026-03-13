@@ -1,4 +1,4 @@
-### 👉 [click here to play the game](https://karthiknedunchezhiyan.github.io/google-chrome-dino/) 👈
+### 👉 [click here to play the game](https://chefdino.netlify.app/) 👈
 
 ![chrom-dino-clip](www/assets/chrome-dino.gif)
 
