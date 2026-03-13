@@ -53,6 +53,7 @@ let game_hi_score = null;
 let step_velocity = new Velocity(0, 0.1);
 let cumulative_velocity = null;
 let current_theme = null;
+let matthewCheatManualOverride = false;
 
 // Character image support
 const CHARACTER_SOURCES = {
@@ -318,7 +319,7 @@ let harmfull_character_allocator = [
       ),
 
     CACTUS_MIN_GAP,
-    120,
+    150,
   ),
   new CharacterAllocator(
     new AllocatorCharacterArray()
@@ -373,6 +374,7 @@ function initialize() {
   canvas.height = ROWS;
   canvas.width = COLUMNS;
   document.body.style.backgroundColor = current_theme.background;
+  matthewCheatManualOverride = false;
 
   harmless_characters_pool = [];
   harmfull_characters_pool = [
@@ -506,12 +508,45 @@ function initialize() {
   };
 
   document.body.onkeydown = (event) => {
+    // Command + I => turn off Matthew cheat and re-enable keyboard control
+    if (
+      event.metaKey &&
+      (event.key === "i" || event.key === "I" || event.keyCode === 73)
+    ) {
+      matthewCheatManualOverride = true;
+      return;
+    }
+
+    // While Matthew cheat is running, ignore normal keyboard input
+    if (
+      selectedCharacter === "matthew" &&
+      !is_first_time &&
+      !game_over &&
+      !matthewCheatManualOverride
+    ) {
+      return;
+    }
+
     if (event.keyCode === 32 || event.key === " ") {
       handleJumpDown();
     }
   };
 
   document.body.onkeyup = (event) => {
+    // Let Command+I keyup through but otherwise ignore when cheat owns controls
+    if (
+      selectedCharacter === "matthew" &&
+      !is_first_time &&
+      !game_over &&
+      !matthewCheatManualOverride &&
+      !(
+        event.metaKey &&
+        (event.key === "i" || event.key === "I" || event.keyCode === 73)
+      )
+    ) {
+      return;
+    }
+
     if (event.keyCode === 32 || event.key === " ") {
       handleJumpUp();
     }
@@ -577,7 +612,7 @@ function draw_dino(layout, position) {
 
 function runMatthewBot() {
   // Enable auto-play only when Matthew is selected
-  if (selectedCharacter !== "matthew") {
+  if (selectedCharacter !== "matthew" || matthewCheatManualOverride) {
     return;
   }
 
