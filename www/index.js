@@ -29,14 +29,17 @@ const CELL_SIZE = 2;
 const ROWS = 300;
 let COLUMNS = 1000;
 const FLOOR_VELOCITY = new Velocity(0, -8.4); // 1.2x faster than original -7
-// Global minimum gap between cactus obstacles (lower value = more obstacles)
-let CACTUS_MIN_GAP = 17; // ~33% smaller gap ≈ 50% more cacti
-const SAFE_LAND_GAP_COLUMNS = 90; // minimum safe horizontal gap after landing for cheat
+// Global minimum gap between cactus obstacles (higher value = fewer obstacles)
+let CACTUS_MIN_GAP = 40; // softened difficulty: more room to react
+const SAFE_LAND_GAP_COLUMNS = 140; // larger safe horizontal gap after landing for cheat
+// ~30% more obstacles while keeping gaps playable (minimum frames between spawns)
+const OBSTACLE_INCREASE_FACTOR = 1.3;
+const MIN_PLAYABLE_CACTUS_GAP = 60; // minimum ticks between cacti so player can react
 
 if (screen.width < COLUMNS) {
   COLUMNS = screen.width;
   FLOOR_VELOCITY.add(new Velocity(0, 2));
-  CACTUS_MIN_GAP = 40; // smaller gap on small screens as well
+  CACTUS_MIN_GAP = 70; // still softened on small screens
 }
 const DINO_INITIAL_TRUST = new Velocity(-10, 0);
 const ENVIRONMENT_GRAVITY = new Velocity(-0.8, 0);
@@ -57,6 +60,8 @@ let step_velocity = new Velocity(0, -0.1);
 let cumulative_velocity = null;
 let current_theme = null;
 let matthewCheatManualOverride = false;
+let matthewAutoJumping = false;
+let matthewDesiredHoldFrames = 0;
 
 // Character image support (served from Netlify's publish directory: www/character/)
 const CHARACTER_SOURCES = {
@@ -258,8 +263,8 @@ let harmless_character_allocator = [
         ),
         0.85,
       ),
-    80, // smaller gap so pits appear more often
-    50,
+    150, // larger gap so pits appear less often
+    80,
   ),
 ];
 
@@ -273,7 +278,7 @@ let harmfull_character_allocator = [
           new Position(201, COLUMNS),
           FLOOR_VELOCITY,
         ),
-        0.8,
+        0.72, // 10% fewer
       )
       .add_character(
         new CharacterMeta(
@@ -282,7 +287,7 @@ let harmfull_character_allocator = [
           new Position(201, COLUMNS),
           FLOOR_VELOCITY,
         ),
-        0.7,
+        0.63, // 10% fewer
       )
       .add_character(
         new CharacterMeta(
@@ -291,7 +296,7 @@ let harmfull_character_allocator = [
           new Position(201, COLUMNS),
           FLOOR_VELOCITY,
         ),
-        0.6,
+        0.54, // 10% fewer
       )
       .add_character(
         new CharacterMeta(
@@ -300,7 +305,7 @@ let harmfull_character_allocator = [
           new Position(193, COLUMNS),
           FLOOR_VELOCITY,
         ),
-        0.5,
+        0.45, // 10% fewer
       )
       .add_character(
         new CharacterMeta(
@@ -309,7 +314,7 @@ let harmfull_character_allocator = [
           new Position(193, COLUMNS),
           FLOOR_VELOCITY,
         ),
-        0.4,
+        0.36, // 10% fewer
       )
       .add_character(
         new CharacterMeta(
@@ -318,11 +323,14 @@ let harmfull_character_allocator = [
           new Position(193, COLUMNS),
           FLOOR_VELOCITY,
         ),
-        0.3,
+        0.27, // 10% fewer
       ),
 
-    CACTUS_MIN_GAP,
-    100, // reduce gap between harmful obstacles (~50% more overall)
+    Math.max(
+      MIN_PLAYABLE_CACTUS_GAP,
+      Math.round((CACTUS_MIN_GAP + 40) / OBSTACLE_INCREASE_FACTOR),
+    ),
+    Math.round(200 / OBSTACLE_INCREASE_FACTOR),
   ),
   new CharacterAllocator(
     new AllocatorCharacterArray()
@@ -333,7 +341,7 @@ let harmfull_character_allocator = [
           new Position(170, COLUMNS),
           FLOOR_VELOCITY.clone().add(new Velocity(0, -1)),
         ),
-        0.98,
+        0.88, // 10% fewer bird waves
       )
       .add_character(
         new CharacterMeta(
@@ -342,10 +350,10 @@ let harmfull_character_allocator = [
           new Position(190, COLUMNS),
           FLOOR_VELOCITY.clone().add(new Velocity(0, -1)),
         ),
-        0.9,
+        0.81, // 10% fewer bird waves
       ),
-    500,
-    50,
+    Math.round(650 / OBSTACLE_INCREASE_FACTOR),
+    Math.round(90 / OBSTACLE_INCREASE_FACTOR),
   ),
 ];
 
@@ -627,12 +635,12 @@ function runMatthewBot() {
   const dino_pos = dino_character.get_position().get();
   const dino_col = dino_pos[1];
 
-  // Look for the closest harmful character (non-bird) in front of the dino,
-  // using time-to-collision instead of a fixed distance.
-  const MIN_JUMP_TIME_FRAMES = 10; // too early before this
-  const MAX_JUMP_TIME_FRAMES = 24; // too late after this
+  // Look for the closest harmful characters (non-bird) in front of the dino,
+  // using time-to-collision. Jump only when obstacle is close enough (not too early).
+  const BASE_MIN_JUMP_TIME_FRAMES = 8;  // don't jump when already too close
+  const BASE_MAX_JUMP_TIME_FRAMES = 16; // don't jump when obstacle still far away
 
-  let bestTimeToCollision = null;
+  const candidates = [];
 
   for (let i = 1; i < harmfull_characters_pool.length; i++) {
     const obst = harmfull_characters_pool[i];
@@ -659,22 +667,54 @@ function runMatthewBot() {
     }
 
     const timeToCollision = dx / speedX;
+    candidates.push({ dx, timeToCollision });
+  }
 
-    // Skip if the obstacle is either too far in the future or already too close
-    if (
-      timeToCollision < MIN_JUMP_TIME_FRAMES ||
-      timeToCollision > MAX_JUMP_TIME_FRAMES
-    ) {
-      continue;
-    }
+  if (candidates.length === 0 || !dino_ready_to_jump) {
+    return;
+  }
 
-    // Pick the earliest valid collision time
-    if (bestTimeToCollision === null || timeToCollision < bestTimeToCollision) {
-      bestTimeToCollision = timeToCollision;
+  // Sort by distance so candidates[0] is the next obstacle.
+  candidates.sort((a, b) => a.dx - b.dx);
+
+  const primary = candidates[0];
+  const secondary = candidates[1];
+
+  // Slight adjustment for speed: at higher speed allow a tiny bit earlier jump,
+  // but keep the window tight so we don't jump too early.
+  const currentSpeedX = Math.abs(
+    harmfull_characters_pool[1]
+      ? harmfull_characters_pool[1].get_velocity().get()[1]
+      : FLOOR_VELOCITY.get()[1],
+  );
+  const speedFactor = Math.min(Math.max(currentSpeedX / 8, 0.9), 1.15);
+
+  const minJumpTimeFrames = BASE_MIN_JUMP_TIME_FRAMES * speedFactor;
+  let maxJumpTimeFrames = BASE_MAX_JUMP_TIME_FRAMES * speedFactor;
+
+  // Choose how long to "hold" the jump (how high/long) depending on how
+  // tightly packed the next few obstacles are.
+  let desiredHoldFrames = 6; // short hop by default
+
+  if (secondary) {
+    const gapBetween = secondary.dx - primary.dx;
+
+    if (gapBetween < 45) {
+      // Very tight pair of obstacles: use a long jump to try to clear both.
+      desiredHoldFrames = MAX_JUMP_HOLD_FRAMES;
+      maxJumpTimeFrames += 2; // small extension so we still don't jump too early
+    } else if (gapBetween < SAFE_LAND_GAP_COLUMNS) {
+      // Medium spacing: medium jump so we land early enough to react.
+      desiredHoldFrames = 10;
     }
   }
 
-  if (bestTimeToCollision !== null && dino_ready_to_jump) {
+  if (
+    primary.timeToCollision >= minJumpTimeFrames &&
+    primary.timeToCollision <= maxJumpTimeFrames
+  ) {
+    matthewAutoJumping = true;
+    matthewDesiredHoldFrames = desiredHoldFrames;
     handleJumpDown();
   }
 }
@@ -754,11 +794,7 @@ function event_loop() {
         // When Matthew cheat is active, avoid spawning harmful obstacles
         // unrealistically close in front of the dino, which can create
         // impossible sequences while the dino is still in the air.
-        if (
-          allocatorIndex === 1 &&
-          selectedCharacter === "matthew" &&
-          !matthewCheatManualOverride
-        ) {
+        if (allocatorIndex === 1) {
           const dino_character = harmfull_characters_pool[0];
           if (dino_character) {
             const dino_col = dino_character.get_position().get()[1];
@@ -897,6 +933,19 @@ function event_loop() {
   ) {
     dino_current_trust.add(EXTRA_JUMP_ACCEL);
     jumpHoldFrames++;
+
+    // For Matthew cheat, automatically "release" the jump after the
+    // desired number of frames so we don't always use the maximum
+    // airtime. This lets the bot land earlier and be ready for another
+    // jump on tricky, closely-spaced sequences.
+    if (
+      matthewAutoJumping &&
+      jumpHoldFrames >= matthewDesiredHoldFrames &&
+      selectedCharacter === "matthew"
+    ) {
+      matthewAutoJumping = false;
+      handleJumpUp();
+    }
   }
 
   if (
