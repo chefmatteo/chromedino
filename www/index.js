@@ -28,13 +28,13 @@ const canvas_ctx = canvas.getContext("2d");
 const CELL_SIZE = 2;
 const ROWS = 300;
 let COLUMNS = 1000;
-const FLOOR_VELOCITY = new Velocity(0, -7);
-let CACTUS_MIN_GAP = 24;
+const FLOOR_VELOCITY = new Velocity(0, -8.4); // 1.2x faster than -7
+let CACTUS_MIN_GAP = 29;
 
 if (screen.width < COLUMNS) {
   COLUMNS = screen.width;
   FLOOR_VELOCITY.add(new Velocity(0, 2));
-  CACTUS_MIN_GAP = 60;
+  CACTUS_MIN_GAP = 72;
 }
 const DINO_INITIAL_TRUST = new Velocity(-10, 0);
 const ENVIRONMENT_GRAVITY = new Velocity(-0.8, 0);
@@ -169,7 +169,7 @@ let harmless_character_allocator = [
           [cloud_layout],
           0,
           new Position(100, COLUMNS),
-          new Velocity(0, -1),
+          new Velocity(0, -1.2), // 1.2x faster than -1
         ),
         0.9,
       )
@@ -178,7 +178,7 @@ let harmless_character_allocator = [
           [cloud_layout],
           0,
           new Position(135, COLUMNS),
-          new Velocity(0, -1),
+          new Velocity(0, -1.2),
         ),
         0.85,
       )
@@ -187,7 +187,7 @@ let harmless_character_allocator = [
           [cloud_layout],
           0,
           new Position(150, COLUMNS),
-          new Velocity(0, -1),
+          new Velocity(0, -1.2),
         ),
         0.8,
       ),
@@ -201,7 +201,7 @@ let harmless_character_allocator = [
           [star_layout.small_s1],
           0,
           new Position(90, COLUMNS),
-          new Velocity(0, -0.3),
+          new Velocity(0, -0.36), // 1.2x faster than -0.3
         ),
         0.9,
       )
@@ -210,7 +210,7 @@ let harmless_character_allocator = [
           [star_layout.small_s2],
           0,
           new Position(125, COLUMNS),
-          new Velocity(0, -0.3),
+          new Velocity(0, -0.36),
         ),
         0.85,
       )
@@ -219,7 +219,7 @@ let harmless_character_allocator = [
           [star_layout.small_s1],
           0,
           new Position(140, COLUMNS),
-          new Velocity(0, -0.3),
+          new Velocity(0, -0.36),
         ),
         0.8,
       ),
@@ -255,7 +255,7 @@ let harmless_character_allocator = [
         ),
         0.85,
       ),
-    120,
+    144,
     50,
   ),
 ];
@@ -319,7 +319,7 @@ let harmfull_character_allocator = [
       ),
 
     CACTUS_MIN_GAP,
-    150,
+    180,
   ),
   new CharacterAllocator(
     new AllocatorCharacterArray()
