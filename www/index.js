@@ -89,6 +89,8 @@ const CHARACTER_SOURCES = {
   justin: "character/justin.png",
   junia: "character/junia.png",
   aien: "character/aien.png",
+  ak: "character/ak.png",
+  mui: "character/mui.png",
 };
 
 const andisonImg = new Image();
@@ -99,6 +101,8 @@ const edenImg = new Image();
 const justinImg = new Image();
 const juniaImg = new Image();
 const aienImg = new Image();
+const akImg = new Image();
+const muiImg = new Image();
 let andisonReady = false;
 let ckReady = false;
 let matthewReady = false;
@@ -107,6 +111,8 @@ let edenReady = false;
 let justinReady = false;
 let juniaReady = false;
 let aienReady = false;
+let akReady = false;
+let muiReady = false;
 
 andisonImg.src = CHARACTER_SOURCES.andison;
 andisonImg.onload = () => {
@@ -146,6 +152,16 @@ juniaImg.onload = () => {
 aienImg.src = CHARACTER_SOURCES.aien;
 aienImg.onload = () => {
   aienReady = true;
+};
+
+akImg.src = CHARACTER_SOURCES.ak;
+akImg.onload = () => {
+  akReady = true;
+};
+
+muiImg.src = CHARACTER_SOURCES.mui;
+muiImg.onload = () => {
+  muiReady = true;
 };
 
 let selectedCharacter = "andison";
@@ -432,7 +448,11 @@ function initialize() {
   const justinButton = document.getElementById("character-justin");
   const juniaButton = document.getElementById("character-junia");
   const aienButton = document.getElementById("character-aien");
+  const akButton = document.getElementById("character-ak");
+  const muiButton = document.getElementById("character-mui");
+
   const characterInfoImg = document.getElementById("character-current-image");
+
 
   const updateCharacterInfoImage = () => {
     if (characterInfoImg && CHARACTER_SOURCES[selectedCharacter]) {
@@ -449,6 +469,8 @@ function initialize() {
     justin: justinButton,
     junia: juniaButton,
     aien: aienButton,
+    ak: akButton,
+    mui: muiButton,
   };
 
   if (
@@ -459,7 +481,9 @@ function initialize() {
     edenButton &&
     justinButton &&
     juniaButton &&
-    aienButton
+    aienButton &&
+    akButton &&
+    muiButton
   ) {
     const setActiveCharacter = (characterKey) => {
       selectedCharacter = characterKey;
@@ -520,6 +544,18 @@ function initialize() {
       event.stopPropagation();
       if (!game_over && !is_first_time) return;
       setActiveCharacter("aien");
+    };
+
+    akButton.onclick = (event) => {
+      event.stopPropagation();
+      if (!game_over && !is_first_time) return;
+      setActiveCharacter("ak");
+    };
+
+    muiButton.onclick = (event) => {
+      event.stopPropagation();
+      if (!game_over && !is_first_time) return;
+      setActiveCharacter("mui");
     };
 
     setActiveCharacter(selectedCharacter);
@@ -633,6 +669,12 @@ function draw_dino(layout, position) {
   } else if (selectedCharacter === "aien") {
     img = aienImg;
     ready = aienReady;
+  } else if (selectedCharacter === "ak") {
+    img = akImg;
+    ready = akReady;
+  } else if (selectedCharacter === "mui") {
+    img = muiImg;
+    ready = muiReady;
   }
 
   // Only draw the chosen character image; never fall back to the pixel dino.
@@ -642,7 +684,17 @@ function draw_dino(layout, position) {
 
   const layoutHeight = layout.length * CELL_SIZE;
   const layoutWidth = layout[0].length * CELL_SIZE;
-  canvas_ctx.drawImage(img, col, row, layoutWidth, layoutHeight);
+  const iw = img.naturalWidth || img.width || 1;
+  const ih = img.naturalHeight || img.height || 1;
+  const scale = Math.min(layoutWidth / iw, layoutHeight / ih);
+  const drawWidth = iw * scale;
+  const drawHeight = ih * scale;
+  const x = col + (layoutWidth - drawWidth) / 2;
+  const y = row + (layoutHeight - drawHeight) / 2;
+
+  canvas_ctx.imageSmoothingEnabled = true;
+  canvas_ctx.imageSmoothingQuality = "high";
+  canvas_ctx.drawImage(img, x, y, drawWidth, drawHeight);
 }
 
 function runMatthewBot() {
