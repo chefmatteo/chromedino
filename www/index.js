@@ -396,9 +396,8 @@ function buildHarmfullCharacterAllocator(character) {
   ];
 }
 
-let harmfull_character_allocator = buildHarmfullCharacterAllocator(
-  selectedCharacter,
-);
+let harmfull_character_allocator =
+  buildHarmfullCharacterAllocator(selectedCharacter);
 
 function handleJumpDown() {
   if (game_over && Date.now() - game_over > 1000) {
@@ -431,9 +430,8 @@ function initialize() {
   matthewCheatManualOverride = false;
 
   // Matthew = easy (fewer obstacles), other characters = hard (more obstacles)
-  harmfull_character_allocator = buildHarmfullCharacterAllocator(
-    selectedCharacter,
-  );
+  harmfull_character_allocator =
+    buildHarmfullCharacterAllocator(selectedCharacter);
 
   harmless_characters_pool = [];
   harmfull_characters_pool = [
@@ -461,7 +459,6 @@ function initialize() {
   const avlynnButton = document.getElementById("character-avlynn");
 
   const characterInfoImg = document.getElementById("character-current-image");
-
 
   const updateCharacterInfoImage = () => {
     if (characterInfoImg && CHARACTER_SOURCES[selectedCharacter]) {
@@ -704,8 +701,10 @@ function draw_dino(layout, position) {
 
   const layoutHeight = layout.length * CELL_SIZE;
   const layoutWidth = layout[0].length * CELL_SIZE;
-  const iw = img.naturalWidth || img.width || 1;
-  const ih = img.naturalHeight || img.height || 1;
+  const iw = img.naturalWidth || img.width || 0;
+  const ih = img.naturalHeight || img.height || 0;
+  if (iw <= 0 || ih <= 0) return;
+
   const scale = Math.min(layoutWidth / iw, layoutHeight / ih);
   const drawWidth = iw * scale;
   const drawHeight = ih * scale;
@@ -733,7 +732,7 @@ function runMatthewBot() {
 
   // Look for the closest harmful characters (non-bird) in front of the dino,
   // using time-to-collision. Jump only when obstacle is close enough (not too early).
-  const BASE_MIN_JUMP_TIME_FRAMES = 8;  // don't jump when already too close
+  const BASE_MIN_JUMP_TIME_FRAMES = 8; // don't jump when already too close
   const BASE_MAX_JUMP_TIME_FRAMES = 16; // don't jump when obstacle still far away
 
   const candidates = [];

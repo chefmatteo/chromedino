@@ -59,7 +59,9 @@
     height: 200px;
     border: 1px solid #535353;
     background: #ffffff;
-    image-rendering: pixelated;
+    object-fit: contain;
+    object-position: center;
+    image-rendering: auto;
 }
 
 .intro-overlay {
