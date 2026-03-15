@@ -91,6 +91,7 @@ const CHARACTER_SOURCES = {
   aien: "character/aien.png",
   ak: "character/ak.png",
   mui: "character/mui.png",
+  avlynn: "character/avlynn.png",
 };
 
 const andisonImg = new Image();
@@ -103,6 +104,7 @@ const juniaImg = new Image();
 const aienImg = new Image();
 const akImg = new Image();
 const muiImg = new Image();
+const avlynnImg = new Image();
 let andisonReady = false;
 let ckReady = false;
 let matthewReady = false;
@@ -113,6 +115,7 @@ let juniaReady = false;
 let aienReady = false;
 let akReady = false;
 let muiReady = false;
+let avlynnReady = false;
 
 andisonImg.src = CHARACTER_SOURCES.andison;
 andisonImg.onload = () => {
@@ -162,6 +165,11 @@ akImg.onload = () => {
 muiImg.src = CHARACTER_SOURCES.mui;
 muiImg.onload = () => {
   muiReady = true;
+};
+
+avlynnImg.src = CHARACTER_SOURCES.avlynn;
+avlynnImg.onload = () => {
+  avlynnReady = true;
 };
 
 let selectedCharacter = "andison";
@@ -450,6 +458,7 @@ function initialize() {
   const aienButton = document.getElementById("character-aien");
   const akButton = document.getElementById("character-ak");
   const muiButton = document.getElementById("character-mui");
+  const avlynnButton = document.getElementById("character-avlynn");
 
   const characterInfoImg = document.getElementById("character-current-image");
 
@@ -471,6 +480,7 @@ function initialize() {
     aien: aienButton,
     ak: akButton,
     mui: muiButton,
+    avlynn: avlynnButton,
   };
 
   if (
@@ -483,7 +493,8 @@ function initialize() {
     juniaButton &&
     aienButton &&
     akButton &&
-    muiButton
+    muiButton &&
+    avlynnButton
   ) {
     const setActiveCharacter = (characterKey) => {
       selectedCharacter = characterKey;
@@ -556,6 +567,12 @@ function initialize() {
       event.stopPropagation();
       if (!game_over && !is_first_time) return;
       setActiveCharacter("mui");
+    };
+
+    avlynnButton.onclick = (event) => {
+      event.stopPropagation();
+      if (!game_over && !is_first_time) return;
+      setActiveCharacter("avlynn");
     };
 
     setActiveCharacter(selectedCharacter);
@@ -675,6 +692,9 @@ function draw_dino(layout, position) {
   } else if (selectedCharacter === "mui") {
     img = muiImg;
     ready = muiReady;
+  } else if (selectedCharacter === "avlynn") {
+    img = avlynnImg;
+    ready = avlynnReady;
   }
 
   // Only draw the chosen character image; never fall back to the pixel dino.
